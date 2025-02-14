@@ -42,11 +42,11 @@ class Main {
     
       var results = sort(lines);
 
-      // Finally writeout the results
+      // Finally writeout the results and print statistics
       for (var result : results) {
         // Avoid creating empty files
         if (result.lines.isEmpty()) continue;
-        var path = Paths.get(options.outputPath(), options.prefix() + result.filename);
+        var path = Paths.get(options.outputPath(), options.prefix() + result.name + "s.txt");
         var openOptions = options.appendEh()
           ? new StandardOpenOption[] { StandardOpenOption.APPEND }
           : new StandardOpenOption[0];
@@ -56,32 +56,38 @@ class Main {
         } catch (IOException e) {
           throw new UncheckedIOException("unable to create file: " + e.getMessage(), e);
         }
+
+        System.out.printf("* %s sorting statistics:\n", result.name);
+        System.out.printf("  count: %s\n", result.lines.size());
+        if (options.statisticsType() == StatisticsType.SHORT) continue;
+        System.out.printf("  min: %s\n", result.min);
+        System.out.printf("  max: %s\n", result.max);
+        if (result.name == "string") continue;
+        System.out.printf("  sum: %s\n", result.sum);
+        System.out.printf("  average: %s\n", result.average);
       }
     } catch (UncheckedIOException | IllegalArgumentException e) {
       System.out.println("sorter: error: " + e.getMessage());
     }
   }
 
-  public static SortingResult<?>[] sort(Stream<String> lines) {
-    var integers = new SortingResult<BigInteger>(
-      "integers.txt",
+  public static SortingState<?>[] sort(Stream<String> lines) {
+    var integers = new SortingState<BigInteger>(
+      "integer",
       BigInteger::add,
       BigInteger::compareTo,
-      new ArrayList<String>(),
       BigInteger.ZERO
     );
-    var floats = new SortingResult<BigDecimal>(
-      "floats.txt",
+    var floats = new SortingState<BigDecimal>(
+      "float",
       BigDecimal::add,
       BigDecimal::compareTo,
-      new ArrayList<String>(),
       BigDecimal.ZERO
     );
-    var strings = new SortingResult<String>(
-      "strings.txt",
+    var strings = new SortingState<String>(
+      "string",
       (_x, _y) -> null,
       (x, y) -> x.length() - y.length(),
-      new ArrayList<String>(),
       null
     );
 
@@ -109,7 +115,7 @@ class Main {
     integers.average = average(new BigDecimal(integers.sum), integers.lines.size());
     floats.average = average(floats.sum, floats.lines.size());
 
-    return new SortingResult<?>[] {
+    return new SortingState<?>[] {
       integers,
       floats,
       strings
@@ -122,8 +128,8 @@ class Main {
   }
 }
 
-class SortingResult<T> {
-  public String filename;
+class SortingState<T> {
+  public String name;
   public BinaryOperator<T> addition;
   public Comparator<T> comparison;
   public ArrayList<String> lines;
@@ -132,11 +138,11 @@ class SortingResult<T> {
   public T sum;
   public BigDecimal average;
 
-  SortingResult(String filename, BinaryOperator<T> addition, Comparator<T> comparison, ArrayList<String> lines, T sum) {
-    this.filename = filename;
+  SortingState(String name, BinaryOperator<T> addition, Comparator<T> comparison, T sum) {
+    this.name = name;
     this.addition = addition;
     this.comparison = comparison;
-    this.lines = lines;
+    this.lines = new ArrayList<>();
     this.min = null;
     this.max = null;
     this.sum = sum;
