@@ -21,10 +21,44 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 
 class Main {
+  static String help = """
+  sorter sorts lines from each file into three kinds:
+  * floating-point number
+    Arbitrary precision floating-point number.
+    Line shall not have leading or trailing whitespace.
+  * integral number
+    Arbitrary sized integer number.
+    Line shall not have leading or trailing whitespace.
+  * string
+  
+  USAGE:
+    sorter [OPTIONS] [PATH ...]
+  OPTIONS:
+    -o PATH
+      Output path. Default is "./".
+
+    -p PREFIX
+      Output filename prefix. Default is "".
+
+    -a
+      Do not overwrite contents, append.
+      
+    -s
+      Short statistics. Default.
+
+    -f
+      Full statistics.""";
+
   public static void main(String[] args) {
     try {
       System.out.println("Doge sorter9k, ingesting lines:");
       Options options = Options.parse(args);
+
+      if (options.files().length == 0 || Arrays.asList(args).contains("--help")) {
+        System.out.println(help);
+        return;
+      }
+
       //System.out.println(options);
 
       Stream<Path> paths = Arrays.stream(options.files())
